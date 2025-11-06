@@ -30,7 +30,7 @@ This project uses the **Hardhat** environment for Ethereum smart contract develo
 
 1. **Clone the repository:**
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/Gourav-praneeth/supplychain.git
    cd FoodSafe
    
 2.  **Install Node.js dependencies:**

@@ -1,55 +1,61 @@
-# supplychain
-# FoodRecallSystem
+# FoodSafe: Blockchain Food Safety and Recall System
 
-Lot-level traceability on Ethereum/Polygon to enable **surgical food recalls**. Each batch is an ERC-721 token with on-chain custody, status events, and a regulator-controlled recall switch. IPFS stores certificates/attachments; events power the UI & audits.
+## Description
 
-> **Why:** Current recalls are slow and broad. Lot-level blockchain provenance enables fast, narrow recalls that protect public health while reducing waste and cost.
-> Refs: Course Project 1 brief & resources (Remix, MetaMask, Polygon Amoy).  
-> 
-> - Proposal: surgical recalls, Ethereum + Solidity, OZ ERC-721, IPFS. 
-> - Course setup: MetaMask, Polygon Amoy Testnet, Faucet, Remix & Solidity docs.
+**FoodSafe** addresses critical flaws in traditional food supply chains.  
+When contamination (like *E. coli* or *Salmonella*) occurs, tracing the source can take **days or weeks**, leading to dangerous *blanket recalls* that waste safe food and damage consumer trust.
 
----
+**FoodSafe** is a **blockchain-based traceability system** enabling **surgical recalls**.  
+By maintaining an **immutable, lot-level ledger** of a food product’s journey from farm to shelf, the system allows regulators to trace contamination sources in seconds — and recall **only the affected batches**.
 
-## Architecture (High Level)
-
-**Stakeholders & Roles**
-- Producer: registers new lots (batches) → `PRODUCER_ROLE`
-- Distributor: updates custody in transit → `DISTRIBUTOR_ROLE`
-- Retailer: marks received/on-shelf → `RETAILER_ROLE`
-- Regulator: issues/clears recalls; can pause → `REGULATOR_ROLE`
-
-**On-chain (Solidity)**
-- ERC-721 token per lot (tokenId)
-- Events: `BatchRegistered`, `CustodyTransferred`, `StatusUpdated`,
-  `SensorReadingRecorded`, `RecallIssued`, `RecallCleared`
-- RBAC via OpenZeppelin `AccessControl`
-- Minimal on-chain storage + event-first design
-- Recall bit per token, managed by regulator
-
-**Off-chain**
-- IPFS for certificates, CoAs, extended sensor logs
-- Frontend (React/Streamlit) consumes chain events via Alchemy/Infura + Ethers
+### System Benefits
+- **Complete Traceability:** Full visibility from producer to retailer.  
+- **Real-Time Transparency:** Instant access for authorized stakeholders.  
+- **Rapid Recalls:** Smart contracts instantly flag and notify stakeholders of recalled batches.  
+- **Immutable Records:** Ensures data integrity and compliance with food safety regulations.
 
 ---
 
-## Features (Draft)
-- Lot registration (producer-only)
-- Custody transfer (owner-only; emits history event)
-- Status changes (`Created`, `InTransit`, `Received`, `OnShelf`, `Recalled`, `Destroyed`)
-- Regulator recall (issue/clear) at token or list-of-tokens granularity
+## Dependencies & Setup
+
+This project uses the **Hardhat** environment for Ethereum smart contract development.
+
+### Core Dependencies
+- **Solidity:** Smart contract language (`v0.8.20+`)
+- **Hardhat:** Development, testing, and deployment framework.
+- **OpenZeppelin Contracts:** Secure, audited base contracts (ERC-721, AccessControl).
+- **IPFS:** Off-chain storage for large files (e.g., IoT logs, production credentials).
+
+### Setup Instructions
+
+1. **Clone the repository:**
+   ```bash
+   git clone <your-repo-url>
+   cd FoodSafe
+   
+2.  **Install Node.js dependencies:**
+    npm install
+
+3. **Install Hardhat and OpenZeppelin:**
+   npm install --save-dev hardhat @nomicfoundation/hardhat-toolbox
+   npm install @openzeppelin/contracts
+
+
+## 🧠 Draft Smart Contract — `FoodSafe.sol`
+
+The `FoodSafe` smart contract implements the **core on-chain logic** for the FoodSafe system.  
+It leverages **OpenZeppelin’s AccessControl** and **ERC-721 standards** to provide secure, role-based management and unique lot tracking on the blockchain.
 
 ---
 
-## Dependencies / Setup
+### 🔑 Roles & Permissions
 
-**Core**
-- Node.js ≥ 18, Yarn or npm
-- Hardhat, Ethers.js, OpenZeppelin Contracts
+| Role | Description | Capabilities |
+|------|--------------|---------------|
+| `DEFAULT_ADMIN_ROLE` | Super-admin, manages all roles. | Can grant/revoke roles. |
+| `PRODUCER_ROLE` | Assigned to farmers or factories. | Register new food lots. |
+| `DISTRIBUTOR_ROLE` | Assigned to logistics or shipping partners. | Add tracking history, mark lots as "On Shelf". |
+| `REGULATOR_ROLE` | Assigned to regulatory authorities (e.g., FDA). | Trigger recalls and view all data. |
 
-```bash
-# from repo root
-npm init -y
-npm install --save-dev hardhat @nomicfoundation/hardhat-toolbox
-npm install @openzeppelin/contracts dotenv
-npx hardhat init
+
+

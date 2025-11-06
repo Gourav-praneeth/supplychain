@@ -1,7 +1,6 @@
-# supplychain
-# FoodRecallSystem
+# FoodSafe: Blockchain Food Safety and Recall System
 
-Lot-level traceability on Ethereum/Polygon to enable **surgical food recalls**. Each batch is an ERC-721 token with on-chain custody, status events, and a regulator-controlled recall switch. IPFS stores certificates/attachments; events power the UI & audits.
+## Description
 
 **FoodSafe** addresses critical flaws in traditional food supply chains.  
 When contamination (like *E. coli* or *Salmonella*) occurs, tracing the source can take **days or weeks**, leading to dangerous *blanket recalls* that waste safe food and damage consumer trust.
@@ -211,8 +210,36 @@ npm run dev
 - IPFS (via Pinata) for certificates, sensor logs, shipping manifests
 - PostgreSQL indexes blockchain events for fast queries
 - Frontend (React/Next.js) consumes backend API and can interact directly with the blockchain via Ethers.js
+- **Complete Traceability:** Full visibility from producer to retailer.  
+- **Real-Time Transparency:** Instant access for authorized stakeholders.  
+- **Rapid Recalls:** Smart contracts instantly flag and notify stakeholders of recalled batches.  
+- **Immutable Records:** Ensures data integrity and compliance with food safety regulations.
 
 ---
+
+## Dependencies & Setup
+
+This project uses the **Hardhat** environment for Ethereum smart contract development.
+
+### Core Dependencies
+- **Solidity:** Smart contract language (`v0.8.20+`)
+- **Hardhat:** Development, testing, and deployment framework.
+- **OpenZeppelin Contracts:** Secure, audited base contracts (ERC-721, AccessControl).
+- **IPFS:** Off-chain storage for large files (e.g., IoT logs, production credentials).
+
+### Setup Instructions
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Gourav-praneeth/supplychain.git
+   cd FoodSafe
+   
+2.  **Install Node.js dependencies:**
+    npm install
+
+3. **Install Hardhat and OpenZeppelin:**
+   npm install --save-dev hardhat @nomicfoundation/hardhat-toolbox
+   npm install @openzeppelin/contracts
 
 ## API Endpoints
 
@@ -414,3 +441,17 @@ Once the backend is running, the following endpoints are available:
 - `GET /stats` - System statistics
 
 Interactive API documentation: `http://localhost:8000/docs`
+
+---
+
+### Roles & Permissions
+
+| Role | Description | Capabilities |
+|------|--------------|---------------|
+| `DEFAULT_ADMIN_ROLE` | Super-admin, manages all roles. | Can grant/revoke roles. |
+| `PRODUCER_ROLE` | Assigned to farmers or factories. | Register new food lots. |
+| `DISTRIBUTOR_ROLE` | Assigned to logistics or shipping partners. | Add tracking history, mark lots as "On Shelf". |
+| `REGULATOR_ROLE` | Assigned to regulatory authorities (e.g., FDA). | Trigger recalls and view all data. |
+
+
+

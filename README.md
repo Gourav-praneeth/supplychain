@@ -41,14 +41,14 @@ This project uses the **Hardhat** environment for Ethereum smart contract develo
    npm install @openzeppelin/contracts
 
 
-## 🧠 Draft Smart Contract — `FoodSafe.sol`
+## Draft Smart Contract — `FoodSafe.sol`
 
 The `FoodSafe` smart contract implements the **core on-chain logic** for the FoodSafe system.  
 It leverages **OpenZeppelin’s AccessControl** and **ERC-721 standards** to provide secure, role-based management and unique lot tracking on the blockchain.
 
 ---
 
-### 🔑 Roles & Permissions
+### Roles & Permissions
 
 | Role | Description | Capabilities |
 |------|--------------|---------------|

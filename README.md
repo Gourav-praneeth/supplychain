@@ -215,10 +215,6 @@ npm run dev
 - **Rapid Recalls:** Smart contracts instantly flag and notify stakeholders of recalled batches.  
 - **Immutable Records:** Ensures data integrity and compliance with food safety regulations.
 
----
-
-## Dependencies & Setup
-
 This project uses the **Hardhat** environment for Ethereum smart contract development.
 
 ### Core Dependencies

@@ -2,6 +2,7 @@ import requests
 import json
 from config import settings
 from typing import Dict, Any
+import os
 
 
 class IPFSService:
@@ -11,10 +12,7 @@ class IPFSService:
 
     def __init__(self):
         """
-        PSEUDOCODE:
-        1. Store Pinata API credentials from settings
-        2. Set up base URL for Pinata API
-        3. Initialize headers for authentication
+        Initialize Pinata API credentials and headers.
         """
         self.api_key = settings.PINATA_API_KEY
         self.secret_key = settings.PINATA_SECRET_API_KEY
@@ -23,84 +21,234 @@ class IPFSService:
             "pinata_api_key": self.api_key,
             "pinata_secret_api_key": self.secret_key
         }
+        self.gateway_url = "https://gateway.pinata.cloud/ipfs"
 
     def upload_json(self, data: Dict[str, Any], filename: str = "metadata.json") -> str:
         """
         Upload JSON data to IPFS via Pinata.
-
-        PSEUDOCODE:
-        1. Convert data dictionary to JSON string
-        2. Prepare request payload with pinataOptions and pinataMetadata
-        3. POST to Pinata pinJSONToIPFS endpoint
-        4. Extract IPFS hash (CID) from response
-        5. Return the IPFS hash (e.g., "QmXxx...")
-        6. Handle errors (network, authentication, rate limits)
-
+        
+        Args:
+            data: Dictionary of data to upload
+            filename: Optional metadata filename
+            
         Returns:
             str: IPFS hash (CID) of the uploaded content
         """
-        pass
+        url = f"{self.base_url}/pinning/pinJSONToIPFS"
+        
+        payload = {
+            "pinataContent": data,
+            "pinataMetadata": {
+                "name": filename
+            },
+            "pinataOptions": {
+                "cidVersion": 1
+            }
+        }
+        
+        try:
+            response = requests.post(
+                url,
+                json=payload,
+                headers={**self.headers, "Content-Type": "application/json"}
+            )
+            response.raise_for_status()
+            
+            result = response.json()
+            ipfs_hash = result.get("IpfsHash")
+            
+            if not ipfs_hash:
+                raise ValueError("No IPFS hash returned from Pinata")
+            
+            print(f"Successfully uploaded JSON to IPFS: {ipfs_hash}")
+            return ipfs_hash
+            
+        except requests.exceptions.RequestException as e:
+            print(f"Error uploading JSON to IPFS: {e}")
+            raise
+        except Exception as e:
+            print(f"Unexpected error uploading JSON: {e}")
+            raise
 
     def upload_file(self, file_path: str, filename: str = None) -> str:
         """
         Upload a file to IPFS via Pinata.
-
-        PSEUDOCODE:
-        1. Open file in binary mode
-        2. Prepare multipart form data
-        3. POST to Pinata pinFileToIPFS endpoint
-        4. Extract IPFS hash from response
-        5. Return the IPFS hash
-        6. Handle file not found or upload errors
+        
+        Args:
+            file_path: Path to the file to upload
+            filename: Optional custom filename for metadata
+            
+        Returns:
+            str: IPFS hash (CID) of the uploaded file
         """
-        pass
+        url = f"{self.base_url}/pinning/pinFileToIPFS"
+        
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"File not found: {file_path}")
+        
+        if filename is None:
+            filename = os.path.basename(file_path)
+        
+        try:
+            with open(file_path, 'rb') as file:
+                files = {
+                    'file': (filename, file)
+                }
+                
+                metadata = json.dumps({
+                    "name": filename
+                })
+                
+                data = {
+                    "pinataMetadata": metadata,
+                    "pinataOptions": json.dumps({
+                        "cidVersion": 1
+                    })
+                }
+                
+                response = requests.post(
+                    url,
+                    files=files,
+                    data=data,
+                    headers=self.headers
+                )
+                response.raise_for_status()
+                
+                result = response.json()
+                ipfs_hash = result.get("IpfsHash")
+                
+                if not ipfs_hash:
+                    raise ValueError("No IPFS hash returned from Pinata")
+                
+                print(f"Successfully uploaded file to IPFS: {ipfs_hash}")
+                return ipfs_hash
+                
+        except requests.exceptions.RequestException as e:
+            print(f"Error uploading file to IPFS: {e}")
+            raise
+        except Exception as e:
+            print(f"Unexpected error uploading file: {e}")
+            raise
 
     def get_content(self, ipfs_hash: str) -> Dict[str, Any]:
         """
         Retrieve JSON content from IPFS using Pinata gateway.
-
-        PSEUDOCODE:
-        1. Construct IPFS gateway URL (e.g., https://gateway.pinata.cloud/ipfs/{hash})
-        2. Make GET request to gateway
-        3. Parse JSON response
-        4. Return parsed data
-        5. Handle errors (404, invalid JSON, network issues)
+        
+        Args:
+            ipfs_hash: The IPFS hash (CID) to retrieve
+            
+        Returns:
+            Dict: Parsed JSON content from IPFS
         """
-        pass
+        url = f"{self.gateway_url}/{ipfs_hash}"
+        
+        try:
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+            
+            # Try to parse as JSON
+            try:
+                return response.json()
+            except json.JSONDecodeError:
+                # If not JSON, return as text
+                return {"content": response.text}
+                
+        except requests.exceptions.RequestException as e:
+            print(f"Error retrieving content from IPFS: {e}")
+            raise
+        except Exception as e:
+            print(f"Unexpected error retrieving content: {e}")
+            raise
 
     def get_file_url(self, ipfs_hash: str) -> str:
         """
         Get the public URL for an IPFS file via Pinata gateway.
-
-        PSEUDOCODE:
-        1. Construct and return gateway URL
-        2. Format: https://gateway.pinata.cloud/ipfs/{ipfs_hash}
+        
+        Args:
+            ipfs_hash: The IPFS hash (CID)
+            
+        Returns:
+            str: Full gateway URL to access the content
         """
-        return f"https://gateway.pinata.cloud/ipfs/{ipfs_hash}"
+        return f"{self.gateway_url}/{ipfs_hash}"
 
     def pin_by_hash(self, ipfs_hash: str) -> bool:
         """
         Pin an existing IPFS hash to your Pinata account.
-
-        PSEUDOCODE:
-        1. POST to Pinata pinByHash endpoint with IPFS hash
-        2. Check response status
-        3. Return True if successful, False otherwise
-        4. Useful for preserving content discovered from events
+        
+        Args:
+            ipfs_hash: The IPFS hash (CID) to pin
+            
+        Returns:
+            bool: True if successful, False otherwise
         """
-        pass
+        url = f"{self.base_url}/pinning/pinByHash"
+        
+        payload = {
+            "hashToPin": ipfs_hash
+        }
+        
+        try:
+            response = requests.post(
+                url,
+                json=payload,
+                headers={**self.headers, "Content-Type": "application/json"}
+            )
+            response.raise_for_status()
+            
+            print(f"Successfully pinned IPFS hash: {ipfs_hash}")
+            return True
+            
+        except requests.exceptions.RequestException as e:
+            print(f"Error pinning IPFS hash: {e}")
+            return False
+        except Exception as e:
+            print(f"Unexpected error pinning hash: {e}")
+            return False
 
     def unpin(self, ipfs_hash: str) -> bool:
         """
         Unpin content from Pinata (remove from your pin set).
-
-        PSEUDOCODE:
-        1. DELETE request to Pinata unpin endpoint
-        2. Check response status
-        3. Return success/failure boolean
-        4. Content remains on IPFS but no longer guaranteed by your account
+        
+        Args:
+            ipfs_hash: The IPFS hash (CID) to unpin
+            
+        Returns:
+            bool: True if successful, False otherwise
         """
-        pass
+        url = f"{self.base_url}/pinning/unpin/{ipfs_hash}"
+        
+        try:
+            response = requests.delete(url, headers=self.headers)
+            response.raise_for_status()
+            
+            print(f"Successfully unpinned IPFS hash: {ipfs_hash}")
+            return True
+            
+        except requests.exceptions.RequestException as e:
+            print(f"Error unpinning IPFS hash: {e}")
+            return False
+        except Exception as e:
+            print(f"Unexpected error unpinning hash: {e}")
+            return False
+
+    def test_connection(self) -> bool:
+        """
+        Test connection to Pinata API.
+        
+        Returns:
+            bool: True if connected and authenticated, False otherwise
+        """
+        url = f"{self.base_url}/data/testAuthentication"
+        
+        try:
+            response = requests.get(url, headers=self.headers)
+            response.raise_for_status()
+            print("Successfully authenticated with Pinata API")
+            return True
+        except Exception as e:
+            print(f"Pinata authentication failed: {e}")
+            return False
 
 
 ipfs_service = IPFSService()

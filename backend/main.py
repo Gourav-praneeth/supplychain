@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
+from config import settings
 
 from database import get_db, init_db, Lot, HistoryEntry, RecallEvent
 from blockchain import blockchain_service
@@ -83,138 +84,232 @@ def root():
 def get_all_lots(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """
     Get all lots with pagination.
-
-    PSEUDOCODE:
-    1. Query Lot table with offset (skip) and limit
-    2. Return list of lots
-    3. Handle database errors
     """
-    pass
+    try:
+        lots = db.query(Lot).offset(skip).limit(limit).all()
+        return lots
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching lots: {str(e)}")
 
 
 @app.get("/lots/{token_id}", response_model=LotResponse)
 def get_lot(token_id: int, db: Session = Depends(get_db)):
     """
     Get specific lot details by token ID.
-
-    PSEUDOCODE:
-    1. Query database for lot with token_id
-    2. If not found, raise 404 HTTPException
-    3. Return lot details
-    4. Optionally sync with blockchain for latest status
     """
-    pass
+    lot = db.query(Lot).filter(Lot.token_id == token_id).first()
+    
+    if not lot:
+        raise HTTPException(status_code=404, detail=f"Lot {token_id} not found")
+    
+    return lot
 
 
 @app.get("/lots/{token_id}/history", response_model=List[HistoryEntryResponse])
 def get_lot_history(token_id: int, db: Session = Depends(get_db)):
     """
     Get complete audit trail for a lot.
-
-    PSEUDOCODE:
-    1. Query HistoryEntry table filtered by token_id
-    2. Order by timestamp ascending
-    3. Return list of history entries
-    4. If lot doesn't exist, return 404
     """
-    pass
+    # Check if lot exists
+    lot = db.query(Lot).filter(Lot.token_id == token_id).first()
+    if not lot:
+        raise HTTPException(status_code=404, detail=f"Lot {token_id} not found")
+    
+    # Get history entries ordered by timestamp
+    history = db.query(HistoryEntry).filter(
+        HistoryEntry.token_id == token_id
+    ).order_by(HistoryEntry.timestamp.asc()).all()
+    
+    return history
 
 
 @app.get("/recalls", response_model=List[RecallEventResponse])
 def get_all_recalls(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """
-    Get all recall events.
-
-    PSEUDOCODE:
-    1. Query RecallEvent table with pagination
-    2. Order by timestamp descending (most recent first)
-    3. Return list of recall events
+    Get all recall events with pagination.
     """
-    pass
+    try:
+        recalls = db.query(RecallEvent).order_by(
+            RecallEvent.timestamp.desc()
+        ).offset(skip).limit(limit).all()
+        return recalls
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching recalls: {str(e)}")
 
 
 @app.get("/lots/{token_id}/recalled")
 def check_recall_status(token_id: int, db: Session = Depends(get_db)):
     """
     Check if a specific lot is recalled.
-
-    PSEUDOCODE:
-    1. Query lot from database
-    2. Return {"token_id": token_id, "is_recalled": lot.is_recalled}
-    3. Optionally verify against blockchain as source of truth
     """
-    pass
+    lot = db.query(Lot).filter(Lot.token_id == token_id).first()
+    
+    if not lot:
+        raise HTTPException(status_code=404, detail=f"Lot {token_id} not found")
+    
+    return {
+        "token_id": token_id,
+        "is_recalled": lot.is_recalled,
+        "status": lot.status
+    }
 
 
 @app.post("/upload", response_model=IPFSUploadResponse)
 async def upload_to_ipfs(file: UploadFile = File(...)):
     """
     Upload a file to IPFS via Pinata.
-
-    PSEUDOCODE:
-    1. Save uploaded file temporarily
-    2. Call ipfs_service.upload_file(file_path)
-    3. Get IPFS hash back
-    4. Delete temporary file
-    5. Return IPFS hash and gateway URL
-    6. Handle upload errors
     """
-    pass
+    import tempfile
+    import os
+    
+    # Create temporary file
+    temp_file = tempfile.NamedTemporaryFile(delete=False)
+    temp_file_path = temp_file.name
+    
+    try:
+        # Write uploaded content to temp file
+        content = await file.read()
+        temp_file.write(content)
+        temp_file.close()
+        
+        # Upload to IPFS
+        ipfs_hash = ipfs_service.upload_file(temp_file_path, file.filename)
+        gateway_url = ipfs_service.get_file_url(ipfs_hash)
+        
+        return IPFSUploadResponse(
+            ipfs_hash=ipfs_hash,
+            gateway_url=gateway_url
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error uploading to IPFS: {str(e)}")
+    finally:
+        # Clean up temp file
+        if os.path.exists(temp_file_path):
+            os.unlink(temp_file_path)
 
 
 @app.post("/upload-json", response_model=IPFSUploadResponse)
 def upload_json_to_ipfs(data: dict):
     """
-    Upload JSON data to IPFS.
-
-    PSEUDOCODE:
-    1. Validate JSON structure
-    2. Call ipfs_service.upload_json(data)
-    3. Return IPFS hash and gateway URL
-    4. Handle errors
+    Upload JSON data to IPFS via Pinata.
     """
-    pass
+    try:
+        ipfs_hash = ipfs_service.upload_json(data)
+        gateway_url = ipfs_service.get_file_url(ipfs_hash)
+        
+        return IPFSUploadResponse(
+            ipfs_hash=ipfs_hash,
+            gateway_url=gateway_url
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error uploading JSON to IPFS: {str(e)}")
 
 
 @app.get("/blockchain/status")
 def blockchain_status():
     """
-    Check blockchain connection status.
-
-    PSEUDOCODE:
-    1. Call blockchain_service.is_connected()
-    2. Get latest block number
-    3. Return connection status and network info
+    Check blockchain connection status and network info.
     """
-    pass
+    try:
+        is_connected = blockchain_service.is_connected()
+        
+        if not is_connected:
+            return {
+                "connected": False,
+                "message": "Not connected to blockchain"
+            }
+        
+        latest_block = blockchain_service.get_latest_block_number()
+        
+        return {
+            "connected": True,
+            "contract_address": blockchain_service.contract_address,
+            "latest_block": latest_block,
+            "rpc_url": settings.POLYGON_AMOY_RPC_URL
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error checking blockchain status: {str(e)}")
 
 
 @app.get("/lots/owner/{address}", response_model=List[LotResponse])
 def get_lots_by_owner(address: str, db: Session = Depends(get_db)):
     """
     Get all lots owned by a specific address.
-
-    PSEUDOCODE:
-    1. Validate Ethereum address format
-    2. Query Lot table filtered by owner_address
-    3. Return list of lots
     """
-    pass
+    # Basic Ethereum address validation
+    if not address.startswith("0x") or len(address) != 42:
+        raise HTTPException(status_code=400, detail="Invalid Ethereum address format")
+    
+    try:
+        lots = db.query(Lot).filter(Lot.owner_address == address).all()
+        return lots
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching lots by owner: {str(e)}")
 
 
 @app.get("/stats")
 def get_statistics(db: Session = Depends(get_db)):
     """
     Get overall system statistics.
-
-    PSEUDOCODE:
-    1. Count total lots
-    2. Count recalled lots
-    3. Count lots by status (InTransit, OnShelf, Recalled)
-    4. Count total history entries
-    5. Return statistics object
     """
-    pass
+    try:
+        # Count total lots
+        total_lots = db.query(Lot).count()
+        
+        # Count recalled lots
+        recalled_lots = db.query(Lot).filter(Lot.is_recalled == True).count()
+        
+        # Count lots by status
+        created_lots = db.query(Lot).filter(Lot.status == "Created").count()
+        in_transit_lots = db.query(Lot).filter(Lot.status == "InTransit").count()
+        on_shelf_lots = db.query(Lot).filter(Lot.status == "OnShelf").count()
+        recalled_by_status = db.query(Lot).filter(Lot.status == "Recalled").count()
+        
+        # Count total history entries
+        total_history_entries = db.query(HistoryEntry).count()
+        
+        # Count total recall events
+        total_recall_events = db.query(RecallEvent).count()
+        
+        return {
+            "total_lots": total_lots,
+            "recalled_lots": recalled_lots,
+            "lots_by_status": {
+                "Created": created_lots,
+                "InTransit": in_transit_lots,
+                "OnShelf": on_shelf_lots,
+                "Recalled": recalled_by_status
+            },
+            "total_history_entries": total_history_entries,
+            "total_recall_events": total_recall_events
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching statistics: {str(e)}")
+
+
+@app.get("/ipfs/{ipfs_hash}")
+def get_ipfs_content(ipfs_hash: str):
+    """
+    Retrieve content from IPFS by hash.
+    """
+    try:
+        content = ipfs_service.get_content(ipfs_hash)
+        return content
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"Error retrieving IPFS content: {str(e)}")
+
+
+@app.get("/lots/{token_id}/blockchain")
+def get_lot_from_blockchain(token_id: int):
+    """
+    Get lot details directly from blockchain (bypasses database).
+    Useful for verification and debugging.
+    """
+    try:
+        lot_details = blockchain_service.get_lot_details(token_id)
+        return lot_details
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching lot from blockchain: {str(e)}")
 
 
 if __name__ == "__main__":

@@ -235,6 +235,20 @@ The API will be available at:
 - **Interactive Docs:** `http://localhost:8000/docs`
 - **ReDoc:** `http://localhost:8000/redoc`
 
+
+## Off-chain Storage
+
+- IPFS (via Pinata) for certificates, sensor logs, shipping manifests
+- PostgreSQL indexes blockchain events for fast queries
+- Frontend (React/Next.js) consumes backend API and can interact directly with the blockchain via Ethers.js
+- **Complete Traceability:** Full visibility from producer to retailer.  
+- **Real-Time Transparency:** Instant access for authorized stakeholders.  
+- **Rapid Recalls:** Smart contracts instantly flag and notify stakeholders of recalled batches.  
+- **Immutable Records:** Ensures data integrity and compliance with food safety regulations.
+
+This project uses the **Hardhat** environment for Ethereum smart contract development.
+
+
 ### 2. Smart Contract Setup (To Be Completed)
 
 ```bash

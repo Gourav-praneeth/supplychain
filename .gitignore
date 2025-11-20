@@ -18,13 +18,16 @@ node_modules/
 .env.production.local
 !.env.example
 
-# Hardhat specific files
+# Solidity 
 # These directories are generated during compilation and testing
-smart-contracts/artifacts/
-smart-contracts/cache/
-smart-contracts/coverage/
-smart-contracts/coverage.json
-smart-contracts/typechain-types/
+.deps/
+.states/
+artifacts/
+cache/
+build/
+remix.log
+.remix-project
+*.dbg.json
 
 # Next.js (Frontend) specific files
 # These directories are generated during development and build

@@ -1,0 +1,17 @@
+# FoodSafe Frontend Dependencies
+# For Streamlit-based food traceability dashboard
+
+# Core Framework
+streamlit==1.29.0
+
+# Blockchain Integration
+web3==6.11.3
+
+# IPFS/Pinata Integration
+requests==2.31.0
+
+# Data Handling
+pandas==2.1.3
+
+# Environment Configuration
+python-dotenv==1.0.0

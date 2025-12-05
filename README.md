@@ -1,551 +1,392 @@
 # FoodSafe: Blockchain Food Safety and Recall System
 
-## Description
+[![Polygon Amoy](https://img.shields.io/badge/Network-Polygon%20Amoy-8247E5)](https://amoy.polygonscan.com/)
+[![Smart Contract](https://img.shields.io/badge/Contract-Deployed-success)](https://amoy.polygonscan.com/address/0x2C6568f8567ba1020ce1D644eE6C15d5bA92A6f9)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**FoodSafe** addresses critical flaws in traditional food supply chains. When contamination (like _E. coli_ or _Salmonella_) occurs, tracing the source can take **days or weeks**, leading to dangerous _blanket recalls_ that waste safe food and damage consumer trust.
+## 🎯 Overview
 
-**FoodSafe** is a **blockchain-based traceability system** enabling **surgical recalls**. By maintaining an **immutable, lot-level ledger** of a food product's journey from farm to shelf, the system allows regulators to trace contamination sources in seconds — and recall **only the affected batches**.
+**FoodSafe** is a **blockchain-based food traceability system** that enables **surgical recalls** by maintaining an **immutable, lot-level ledger** of food products from farm to shelf.
 
-### System Benefits
+When contamination (like *E. coli* or *Salmonella*) occurs, traditional systems take **days or weeks** to trace the source, leading to dangerous blanket recalls. FoodSafe allows regulators to trace contamination sources in **seconds** — recalling **only the affected batches**.
 
-- **Complete Traceability:** Full visibility from producer to retailer
-- **Real-Time Transparency:** Instant access for authorized stakeholders
-- **Rapid Recalls:** Smart contracts instantly flag and notify stakeholders of recalled batches
-- **Immutable Records:** Ensures data integrity and compliance with food safety regulations
+### ✨ Key Features
 
----
-
-## Architecture
-
-FoodSafe uses a **three-tier architecture** to ensure scalability, performance, and user experience:
-
-### Layer 1: Smart Contracts (Blockchain)
-
-- **FoodTraceability.sol** — ERC-721 contract on **Polygon Amoy Testnet**
-- Each food lot is a unique NFT (tokenId)
-- Four status states: `Created`, `InTransit`, `OnShelf`, `Recalled`
-- Role-based access control (PRODUCER, DISTRIBUTOR, RETAILER, REGULATOR)
-- Emits events: `LotRegistered`, `LotStatusUpdated`, `LotRecalled`, `Transfer`
-- Stores minimal on-chain data; history entries reference IPFS hashes
-
-### Layer 2: Backend (API & Indexer)
-
-- **FastAPI** REST API serves lot data to frontend
-- **Event Indexer** listens to blockchain events and stores them in PostgreSQL
-- **Web3.py** integration for real-time blockchain queries
-- **Pinata** service handles IPFS file uploads/retrieval
-- Database models: `Lot`, `HistoryEntry`, `RecallEvent`
-
-### Layer 3: Frontend (DApp) - Coming Soon
-
-- **React/Next.js** web application
-- **MetaMask** integration for wallet connectivity
-- **Wagmi/RainbowKit** for Web3 interactions
-- Role-based dashboards for producers, distributors, and regulators
-
-### Data Flow
-
-1. **Producer** registers lot via MetaMask → FoodSafe contract mints NFT
-2. **Indexer** detects event → stores in PostgreSQL
-3. **API** serves indexed data to frontend
-4. **Distributor** updates lot status → emits event → indexer updates DB
-5. **Regulator** triggers recall → contract marks lot as recalled → notifications sent
+- **🔗 Complete Traceability** — Full visibility from producer to retailer
+- **⚡ Real-Time Transparency** — Instant access for authorized stakeholders
+- **🚨 Rapid Surgical Recalls** — Smart contracts instantly flag affected batches only
+- **🔒 Immutable Records** — Blockchain ensures data integrity and compliance
+- **📄 IPFS Integration** — Off-chain storage for certificates and documents
 
 ---
 
-## Technology Stack
+## 🏗️ Architecture
 
-### Smart Contracts
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Polygon Amoy Testnet                      │
+│           FoodTraceability Smart Contract (ERC-721)          │
+│      0x2C6568f8567ba1020ce1D644eE6C15d5bA92A6f9             │
+└────────────────────────┬────────────────────────────────────┘
+                         │ Web3.py
+         ┌───────────────┴───────────────┐
+         │                               │
+         ▼                               ▼
+┌─────────────────┐            ┌─────────────────┐
+│  Event Indexer  │            │   REST API      │
+│  (indexer.py)   │            │   (FastAPI)     │
+│   Port: N/A     │            │   Port: 8000    │
+└────────┬────────┘            └────────┬────────┘
+         │                               │
+         └───────────┬───────────────────┘
+                     ▼
+         ┌──────────────────────┐
+         │   PostgreSQL DB      │
+         │   (foodsafe_db)      │
+         └──────────────────────┘
+                     │
+                     ▼
+         ┌──────────────────────┐
+         │  Streamlit Frontend  │
+         │     Port: 8501       │
+         └──────────────────────┘
 
-- **Solidity** `^0.8.20` — Smart contract language
-- **Hardhat** — Development, testing, and deployment framework
-- **OpenZeppelin Contracts** — ERC-721, AccessControl implementations
-- **Polygon Amoy Testnet** — Layer 2 scaling solution
-
-### Backend
-
-- **Python** `3.9+` — Backend programming language
-- **FastAPI** — High-performance REST API framework
-- **Web3.py** — Ethereum blockchain interaction
-- **SQLAlchemy** — ORM for database operations
-- **PostgreSQL** — Relational database for event indexing
-- **Pinata** — IPFS pinning service for off-chain storage
-
-### Frontend (Coming Soon)
-
-- **React** with **Next.js** — Web framework
-- **Wagmi** / **RainbowKit** — Blockchain interaction
-- **MetaMask** — Wallet connectivity
+         ┌───────────────┐
+         │ IPFS (Pinata) │◄──── Off-chain Storage
+         └───────────────┘
+```
 
 ---
 
-## Project Structure
+## 🛠️ Technology Stack
+
+| Layer | Technology |
+|-------|------------|
+| **Blockchain** | Solidity ^0.8.20, Polygon Amoy Testnet |
+| **Smart Contract** | ERC-721 NFT, OpenZeppelin AccessControl |
+| **Backend** | Python 3.9+, FastAPI, Web3.py, SQLAlchemy |
+| **Database** | PostgreSQL |
+| **Frontend** | Streamlit (Python) |
+| **Off-Chain Storage** | IPFS via Pinata |
+
+---
+
+## 📁 Project Structure
 
 ```
 supplychain/
-├── backend/                   # Python FastAPI Backend ✅ COMPLETE
-│   ├── blockchain.py          # Web3 integration with smart contract
-│   ├── config.py              # Environment configuration
-│   ├── database.py            # SQLAlchemy models (Lot, HistoryEntry, RecallEvent)
-│   ├── indexer.py             # Event listener/indexer service
-│   ├── ipfs_service.py        # Pinata IPFS integration
-│   ├── main.py                # FastAPI REST API application
-│   ├── contract_abi.json      # Smart contract ABI
-│   ├── test_setup.py          # Automated setup verification
-│   ├── requirements.txt       # Python dependencies
-│   └── .env.example           # Environment variables template
-├── smart-contracts/           # Hardhat project (to be initialized)
-│   └── FoodTraceability.sol   # Main smart contract
-├── frontend/                  # React Next.js frontend (to be implemented)
-├── artifacts/                 # Compiled contract artifacts
-├── PROJECT_STATUS.md          # Current implementation status
-└── README.md                  # This file
+├── backend/                      # Python FastAPI Backend
+│   ├── blockchain.py             # Web3 integration
+│   ├── config.py                 # Environment configuration
+│   ├── database.py               # SQLAlchemy models
+│   ├── indexer.py                # Blockchain event indexer
+│   ├── ipfs_service.py           # Pinata IPFS integration
+│   ├── main.py                   # FastAPI REST API
+│   ├── contract_abi.json         # Smart contract ABI
+│   ├── test_setup.py             # Setup verification script
+│   └── requirements.txt          # Python dependencies
+│
+├── smart-contract/               # Hardhat Smart Contract Project
+│   ├── contracts/
+│   │   └── FoodTraceability.sol  # Main ERC-721 contract
+│   ├── scripts/
+│   │   ├── deploy.js             # Deployment script
+│   │   ├── assign-roles.js       # Role management script
+│   │   └── check-config.js       # Config verification
+│   ├── hardhat.config.js         # Hardhat configuration
+│   └── package.json              # Node.js dependencies
+│
+├── frontend/                     # Streamlit Frontend
+│   ├── streamlit_app.py          # Main Streamlit application
+│   ├── .streamlit/
+│   │   └── secrets.toml          # Frontend secrets (gitignored)
+│   └── requirements.txt          # Python dependencies
+│
+├── artifacts/                    # Compiled contract artifacts
+├── .gitignore                    # Git ignore rules
+├── PROJECT_STATUS.md             # Detailed implementation status
+└── README.md                     # This file
 ```
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
 - **Node.js** ≥ 18
 - **Python** ≥ 3.9
-- **PostgreSQL** database
+- **PostgreSQL** (install via `brew install postgresql@15`)
 - **MetaMask** browser extension
 - **Pinata** account for IPFS ([Sign up here](https://pinata.cloud))
-- **Polygon Amoy** RPC URL from [Alchemy](https://www.alchemy.com/) or [Infura](https://infura.io/)
 
-### 1. Backend Setup
+### 1. Clone the Repository
 
-#### Step 1: Install Dependencies
+```bash
+git clone <repository-url>
+cd supplychain
+```
+
+### 2. Smart Contract Setup
+
+```bash
+cd smart-contract
+
+# Install dependencies
+npm install
+
+# Create .env file with your private key
+echo "PRIVATE_KEY=your_wallet_private_key" > .env
+
+# Verify configuration
+npm run check
+
+# Deploy to Polygon Amoy
+npm run deploy:amoy
+```
+
+**Note:** You need testnet MATIC from [Polygon Faucet](https://faucet.polygon.technology/).
+
+### 3. Backend Setup
 
 ```bash
 cd backend
+
+# Create virtual environment
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
-```
 
-#### Step 2: Set Up PostgreSQL Database
-
-```bash
-# Login to PostgreSQL
-psql -U postgres
-
-# Create database
-CREATE DATABASE foodsafe_db;
-
-# Exit
-\q
-```
-
-#### Step 3: Configure Environment Variables
-
-Copy the example environment file:
-
-```bash
+# Create .env file
 cp .env.example .env
-```
+# Edit .env with your configuration
 
-Edit `.env` with your configuration:
-
-```env
-# Database Configuration
-DATABASE_URL=postgresql://postgres:your_password@localhost/foodsafe_db
-
-# Blockchain Configuration
-POLYGON_AMOY_RPC_URL=https://rpc-amoy.polygon.technology/
-CONTRACT_ADDRESS=0xYourDeployedContractAddress
-
-# IPFS/Pinata Configuration
-PINATA_API_KEY=your_pinata_api_key_here
-PINATA_SECRET_API_KEY=your_pinata_secret_api_key_here
-```
-
-**Getting Pinata API Keys:**
-
-1. Sign up at [https://pinata.cloud](https://pinata.cloud)
-2. Go to API Keys section
-3. Create a new API key with permissions: `pinFileToIPFS`, `pinJSONToIPFS`, `unpin`
-4. Copy the API Key and Secret API Key to your `.env` file
-
-#### Step 4: Initialize Database Tables
-
-```bash
+# Initialize database
 python -c "from database import init_db; init_db()"
-```
 
-#### Step 5: Verify Setup
-
-Run the automated setup verification:
-
-```bash
+# Verify setup
 python test_setup.py
-```
 
-This will check:
-
-- ✅ Package imports
-- ✅ Environment configuration
-- ✅ Database connection
-- ✅ Blockchain connection
-- ✅ Contract ABI
-- ✅ IPFS/Pinata authentication
-
-#### Step 6: Run the Backend Services
-
-The backend consists of two services that should run simultaneously:
-
-**Terminal 1 - Event Indexer:**
-
-```bash
+# Start Event Indexer (Terminal 1)
 python indexer.py
-```
 
-Expected output:
-
-```
-============================================================
-Starting FoodSafe Event Indexer
-============================================================
-Blockchain connected: True
-Contract address: 0x...
-Starting from block: 0
-Polling interval: 5 seconds
-============================================================
-```
-
-**Terminal 2 - API Server:**
-
-```bash
+# Start API Server (Terminal 2)
 uvicorn main:app --reload
 ```
 
-Expected output:
-
-```
-INFO:     Uvicorn running on http://0.0.0.0:8000
-INFO:     Application startup complete.
-Blockchain connected: True
-```
-
-The API will be available at:
-
-- **API Base:** `http://localhost:8000`
-- **Interactive Docs:** `http://localhost:8000/docs`
-- **ReDoc:** `http://localhost:8000/redoc`
-
-
-## Off-chain Storage
-
-- IPFS (via Pinata) for certificates, sensor logs, shipping manifests
-- PostgreSQL indexes blockchain events for fast queries
-- Frontend (React/Next.js) consumes backend API and can interact directly with the blockchain via Ethers.js
-- **Complete Traceability:** Full visibility from producer to retailer.  
-- **Real-Time Transparency:** Instant access for authorized stakeholders.  
-- **Rapid Recalls:** Smart contracts instantly flag and notify stakeholders of recalled batches.  
-- **Immutable Records:** Ensures data integrity and compliance with food safety regulations.
-
-This project uses the **Hardhat** environment for Ethereum smart contract development.
-
-
-### 2. Smart Contract Setup (To Be Completed)
-
-```bash
-cd smart-contracts
-npm install --save-dev hardhat @nomicfoundation/hardhat-toolbox
-npm install @openzeppelin/contracts dotenv
-npx hardhat init
-```
-
-Configure Polygon Amoy in `hardhat.config.js` and deploy:
-
-```bash
-npx hardhat compile
-npx hardhat test
-npx hardhat run scripts/deploy.js --network amoy
-```
-
-### 3. Frontend Setup (To Be Implemented)
+### 4. Frontend Setup
 
 ```bash
 cd frontend
-npm install
-npm run dev
+
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Create secrets file
+mkdir -p .streamlit
+cat > .streamlit/secrets.toml << EOF
+[api]
+API_URL = "http://localhost:8000"
+
+[blockchain]
+POLYGON_AMOY_RPC_URL = "https://rpc-amoy.polygon.technology/"
+CONTRACT_ADDRESS = "0x2C6568f8567ba1020ce1D644eE6C15d5bA92A6f9"
+
+[ipfs]
+PINATA_API_KEY = "your_pinata_api_key"
+PINATA_SECRET_API_KEY = "your_pinata_secret_key"
+EOF
+
+# Start Streamlit
+streamlit run streamlit_app.py
 ```
+
+### 5. Access the Application
+
+| Service | URL |
+|---------|-----|
+| **Frontend** | http://localhost:8501 |
+| **Backend API** | http://localhost:8000 |
+| **API Docs (Swagger)** | http://localhost:8000/docs |
+| **Contract on PolygonScan** | [View Contract](https://amoy.polygonscan.com/address/0x2C6568f8567ba1020ce1D644eE6C15d5bA92A6f9) |
 
 ---
 
-## API Endpoints
+## 👥 Roles & Permissions
 
-Once the backend is running, the following REST endpoints are available:
+| Role | Description | Capabilities |
+|------|-------------|--------------|
+| `DEFAULT_ADMIN_ROLE` | Contract deployer | Grant/revoke all roles |
+| `PRODUCER_ROLE` | Farmers, factories | Register new food lots |
+| `DISTRIBUTOR_ROLE` | Logistics partners | Update lot status, track shipments |
+| `RETAILER_ROLE` | Retailers | Mark lots as on-shelf |
+| `REGULATOR_ROLE` | FDA, authorities | Trigger recalls, view all data |
+
+---
+
+## 📡 API Endpoints
 
 ### Lot Management
-
-- `GET /lots` — List all lots (paginated with skip/limit)
-- `GET /lots/{token_id}` — Get specific lot details from database
-- `GET /lots/{token_id}/history` — Get complete audit trail for a lot
-- `GET /lots/{token_id}/blockchain` — Get lot details directly from blockchain
-- `GET /lots/owner/{address}` — Get all lots owned by an Ethereum address
-- `GET /lots/{token_id}/recalled` — Check if a lot is recalled
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/lots` | List all lots (paginated) |
+| `GET` | `/lots/{token_id}` | Get specific lot details |
+| `GET` | `/lots/{token_id}/history` | Get audit trail |
+| `GET` | `/lots/{token_id}/blockchain` | Direct blockchain query |
+| `GET` | `/lots/owner/{address}` | Get lots by owner |
+| `GET` | `/lots/{token_id}/recalled` | Check recall status |
 
 ### Recalls
-
-- `GET /recalls` — List all recall events (paginated, most recent first)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/recalls` | List all recall events |
 
 ### IPFS
-
-- `POST /upload` — Upload file to IPFS (returns IPFS hash)
-- `POST /upload-json` — Upload JSON data to IPFS
-- `GET /ipfs/{ipfs_hash}` — Retrieve content from IPFS
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/upload` | Upload file to IPFS |
+| `POST` | `/upload-json` | Upload JSON to IPFS |
+| `GET` | `/ipfs/{hash}` | Retrieve from IPFS |
 
 ### System
-
-- `GET /` — Health check
-- `GET /blockchain/status` — Check blockchain connection status
-- `GET /stats` — Get system statistics (total lots, recalls, lots by status)
-
-**Interactive Documentation:** Visit `http://localhost:8000/docs` for Swagger UI with full API documentation and testing interface.
-
----
-
-## Testing the API
-
-### Health Check
-
-```bash
-curl http://localhost:8000/
-```
-
-Expected response:
-
-```json
-{
-  "status": "ok",
-  "service": "FoodSafe API"
-}
-```
-
-### Check Blockchain Connection
-
-```bash
-curl http://localhost:8000/blockchain/status
-```
-
-### Get System Statistics
-
-```bash
-curl http://localhost:8000/stats
-```
-
-### Upload JSON to IPFS
-
-```bash
-curl -X POST http://localhost:8000/upload-json \
-  -H "Content-Type: application/json" \
-  -d '{"product": "Tomatoes", "origin": "Farm A", "harvest_date": "2024-01-01"}'
-```
-
-### Get Lot Details
-
-```bash
-curl http://localhost:8000/lots/1
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/` | Health check |
+| `GET` | `/blockchain/status` | Connection status |
+| `GET` | `/stats` | System statistics |
 
 ---
 
-## Smart Contract Overview
+## 🔧 Smart Contract Functions
 
-The `FoodTraceability.sol` smart contract implements the core on-chain logic for the FoodSafe system using **OpenZeppelin's AccessControl** and **ERC-721 standards**.
+```solidity
+// Register a new food lot (Producer only)
+function registerLot(string productName, string origin, string ipfsHash)
 
-### Roles & Permissions
+// Update lot status (Producer, Distributor, Retailer)
+function updateLot(uint256 lotId, string ipfsHash, Status newStatus)
 
-| Role                 | Description                                    | Capabilities                            |
-| -------------------- | ---------------------------------------------- | --------------------------------------- |
-| `DEFAULT_ADMIN_ROLE` | Super-admin, manages all roles                 | Can grant/revoke roles                  |
-| `PRODUCER_ROLE`      | Assigned to farmers or factories               | Register new food lots                  |
-| `DISTRIBUTOR_ROLE`   | Assigned to logistics or shipping partners     | Add tracking history, update lot status |
-| `RETAILER_ROLE`      | Assigned to retailers                          | Mark lots as on-shelf                   |
-| `REGULATOR_ROLE`     | Assigned to regulatory authorities (e.g., FDA) | Trigger recalls and view all data       |
+// Trigger recall (Regulator only)
+function triggerRecall(uint256 lotId)
 
-### Key Functions
-
-- `registerLot(productName, origin, ipfsHash)` — Producer creates new lot, mints NFT
-- `updateLot(lotId, ipfsHash, newStatus)` — Update lot status and add history entry
-- `triggerRecall(lotId)` — Regulator initiates recall
-- `getLot(lotId)` — View complete lot information
-- `getLotHistory(lotId)` — View complete audit trail
-- `assignDistributor(address)` — Grant distributor role
-- `assignRetailer(address)` — Grant retailer role
+// View functions
+function getLot(uint256 lotId) returns (FoodLot)
+function getLotHistory(uint256 lotId) returns (HistoryEntry[])
+```
 
 ### Events
-
-- `LotRegistered(lotId, productName, producer)` — Emitted when new lot is created
-- `LotStatusUpdated(lotId, newStatus, ipfsHash, updater)` — Emitted on status changes
-- `LotRecalled(lotId, regulator)` — Emitted when recall is triggered
-- `Transfer(from, to, tokenId)` — Standard ERC-721 transfer event
+- `LotRegistered(lotId, productName, producer)`
+- `LotStatusUpdated(lotId, newStatus, ipfsHash, updater)`
+- `LotRecalled(lotId, regulator)`
+- `Transfer(from, to, tokenId)` — ERC-721 standard
 
 ---
 
-## Troubleshooting
+## 🎮 Using the DApp
+
+### 1. System Status
+View blockchain connection, API status, and smart contract info.
+
+### 2. Producer Dashboard
+- Enter your wallet address
+- Enable transaction signing (enter private key for testing)
+- Register new food lots with product name, origin, and metadata
+- Upload certificates to IPFS
+
+### 3. Distributor Dashboard
+- Update lot status (InTransit, OnShelf)
+- Upload shipping manifests and temperature logs
+
+### 4. Regulator Dashboard
+- View all food lots in the system
+- Trigger surgical recalls on specific lots
+- View complete audit trails
+
+### 5. Admin Dashboard
+- Grant/revoke roles to addresses
+- View role assignments
+
+---
+
+## 🐛 Troubleshooting
 
 ### Database Connection Failed
-
-**Solution:** Ensure PostgreSQL is running and the DATABASE_URL is correct:
-
 ```bash
-# Check if PostgreSQL is running
-pg_isready
+# Ensure PostgreSQL is running
+brew services start postgresql@15
 
-# Test connection
-psql postgresql://postgres:password@localhost/foodsafe_db
+# Create database if needed
+createdb foodsafe_db
 ```
 
 ### Blockchain Not Connected
-
-**Solution:**
-
-- Verify the RPC URL is correct and accessible
-- Check if Polygon Amoy testnet is operational
-- Try alternative RPC URLs:
-  - `https://rpc-amoy.polygon.technology/`
-  - `https://polygon-amoy.g.alchemy.com/v2/YOUR_KEY`
+- Verify RPC URL: `https://rpc-amoy.polygon.technology/`
+- Check if Polygon Amoy is operational
 
 ### IPFS Upload Failed
+- Verify Pinata API keys in `.env` / `secrets.toml`
+- Check Pinata account limits
 
-**Solution:**
-
-- Verify Pinata API keys are correct
-- Check Pinata account status and limits
-- Test connection via the `/docs` endpoint
-
-### No Events Being Indexed
-
-**Solution:**
-
-- Ensure the contract address is correct
-- Check if there are any transactions on the contract
-- Verify the contract ABI matches the deployed contract
-- Look at indexer logs for errors
-
-### Resetting the Database
-
-If you need to start fresh:
-
-```bash
-# Drop and recreate database
-dropdb foodsafe_db
-createdb foodsafe_db
-
-# Reinitialize tables
-python -c "from database import init_db; init_db()"
-```
+### Frontend Event Loop Error
+- Ensure `nest_asyncio` is installed: `pip install nest_asyncio`
 
 ---
 
-## Development Tips
+## 📊 Project Status
 
-### Viewing Logs
+| Phase | Status | Completion |
+|-------|--------|------------|
+| **Smart Contracts** | ✅ Complete | 100% |
+| **Backend API** | ✅ Complete | 100% |
+| **Event Indexer** | ✅ Complete | 100% |
+| **Frontend** | ✅ Complete | 100% |
 
-The indexer prints detailed logs:
-
-```
-[2024-11-20 12:00:00] Indexing blocks 100 to 150
-Indexed LotRegistered event for lot 1
-Indexed Transfer event for lot 1
-Successfully indexed blocks 100 to 150
-```
-
-### Database Queries
-
-Access the database directly:
-
-```bash
-psql postgresql://postgres:password@localhost/foodsafe_db
-
-# View all lots
-SELECT * FROM lots;
-
-# View history entries
-SELECT * FROM history_entries ORDER BY timestamp DESC LIMIT 10;
-
-# View recalls
-SELECT * FROM recall_events;
-```
+### Deployed Contract
+- **Network:** Polygon Amoy Testnet
+- **Address:** `0x2C6568f8567ba1020ce1D644eE6C15d5bA92A6f9`
+- **Explorer:** [View on PolygonScan](https://amoy.polygonscan.com/address/0x2C6568f8567ba1020ce1D644eE6C15d5bA92A6f9)
 
 ---
 
-## Production Deployment
+## 👨‍💻 Authors
 
-For production deployment, consider:
-
-1. **Use a production-grade server:** Gunicorn or Hypercorn instead of uvicorn directly
-
-   ```bash
-   gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
-   ```
-
-2. **Set up HTTPS:** Use nginx as reverse proxy with SSL certificates
-
-3. **Environment variables:** Use proper secret management (AWS Secrets Manager, Vault)
-
-4. **Database:** Use managed PostgreSQL (AWS RDS, Heroku Postgres)
-
-5. **Monitoring:** Set up logging and monitoring (Sentry, CloudWatch)
-
-6. **Auto-restart:** Use systemd or supervisor for the indexer service
-
-7. **CORS:** Restrict allowed origins in production
-
-8. **Rate limiting:** Add API rate limiting
+- Aakash
+- Gourav
+- Nimesh
+- Niranth
+- Mandar
 
 ---
 
-## Project Status
+## 📄 License
 
-**Phase 1 (Smart Contracts):** 30% Complete
-
-- ✅ Smart contract written and compiled
-- ❌ Hardhat project initialization
-- ❌ Deployment scripts
-- ❌ Test suite
-
-**Phase 2 (Backend):** 100% Complete ✅
-
-- ✅ All blockchain integration functions
-- ✅ IPFS/Pinata service
-- ✅ Event indexer with all event handlers
-- ✅ REST API with 14 endpoints
-- ✅ Database models and setup
-- ✅ Environment configuration
-- ✅ Setup verification script
-
-**Phase 3 (Frontend):** 0% Complete
-
-- ❌ Next.js project initialization
-- ❌ Web3 wallet integration
-- ❌ Role-based dashboards
-
-For detailed implementation status, see [PROJECT_STATUS.md](PROJECT_STATUS.md).
+This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-## Contributing
+## 🤝 Contributing
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
 
-## License
-
-[MIT](https://choosealicense.com/licenses/mit/)
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ---
 
-## Support
+## 📞 Support
 
 For issues or questions:
 
-1. Check the logs from both indexer and API server
-2. Verify all environment variables are set correctly
-3. Ensure smart contract is deployed and accessible
-4. Run `python test_setup.py` to verify configuration
-5. Check the [PROJECT_STATUS.md](PROJECT_STATUS.md) for known issues and limitations
+1. Check logs from indexer and API server
+2. Verify environment variables
+3. Run `python test_setup.py` to verify configuration
+4. Check [PROJECT_STATUS.md](PROJECT_STATUS.md) for known issues

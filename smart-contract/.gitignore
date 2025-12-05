@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Hardhat artifacts
+cache/
+artifacts/
+
+# TypeChain (if using TypeScript)
+typechain/
+typechain-types/
+
+# Environment variables
+.env
+
+# Coverage reports
+coverage/
+coverage.json
+
+# Local testing
+*.log
+

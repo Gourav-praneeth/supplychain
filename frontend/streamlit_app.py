@@ -1,21 +1,46 @@
 import streamlit as st
+
+# MUST be first Streamlit command
+st.set_page_config(
+    page_title="FoodSafe Traceability DApp",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 import requests
 import pandas as pd
 import json
-from web3 import Web3
+import asyncio
+import nest_asyncio
 from pathlib import Path
+
+# Fix asyncio event loop issue for Streamlit + web3.py
+try:
+    nest_asyncio.apply()
+except:
+    pass
+
+# Ensure event loop exists
+try:
+    loop = asyncio.get_event_loop()
+except RuntimeError:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+from web3 import Web3
 
 # 1. Configuration
 API_URL = st.secrets.get("api", {}).get("API_URL", "http://localhost:8000")
 
 # Load blockchain configuration from secrets
+config_error = None
 try:
     POLYGON_AMOY_RPC_URL = st.secrets["blockchain"]["POLYGON_AMOY_RPC_URL"]
     CONTRACT_ADDRESS = st.secrets["blockchain"]["CONTRACT_ADDRESS"]
     PINATA_API_KEY = st.secrets["ipfs"]["PINATA_API_KEY"]
     PINATA_SECRET_API_KEY = st.secrets["ipfs"]["PINATA_SECRET_API_KEY"]
 except Exception as e:
-    st.error(f"Configuration error: {e}. Please check .streamlit/secrets.toml")
+    config_error = str(e)
     POLYGON_AMOY_RPC_URL = None
     CONTRACT_ADDRESS = None
     PINATA_API_KEY = None
@@ -24,6 +49,9 @@ except Exception as e:
 # Initialize Web3 connection
 w3 = None
 contract = None
+contract_abi = None
+web3_error = None
+
 if POLYGON_AMOY_RPC_URL:
     try:
         w3 = Web3(Web3.HTTPProvider(POLYGON_AMOY_RPC_URL))
@@ -36,7 +64,7 @@ if POLYGON_AMOY_RPC_URL:
         if CONTRACT_ADDRESS and CONTRACT_ADDRESS != "0x0000000000000000000000000000000000000000":
             contract = w3.eth.contract(address=Web3.to_checksum_address(CONTRACT_ADDRESS), abi=contract_abi)
     except Exception as e:
-        st.warning(f"Web3 initialization warning: {e}")
+        web3_error = str(e)
 
 # Status enum mapping (matches Solidity contract)
 STATUS_ENUM = {
@@ -46,11 +74,11 @@ STATUS_ENUM = {
     "Recalled": 3
 }
 
-st.set_page_config(
-    page_title="FoodSafe Traceability DApp",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# Show config errors after page config
+if config_error:
+    st.error(f"Configuration error: {config_error}. Please check .streamlit/secrets.toml")
+if web3_error:
+    st.warning(f"Web3 initialization warning: {web3_error}")
 
 # 2. IPFS Helper Functions
 def upload_to_ipfs(file_content, filename):

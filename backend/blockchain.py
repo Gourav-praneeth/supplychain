@@ -2,7 +2,7 @@ from web3 import Web3
 from config import settings
 import json
 import os
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 from datetime import datetime
 
 # Load ABI from the contract_abi.json file
@@ -132,7 +132,7 @@ class BlockchainService:
             print(f"Error checking recall status: {e}")
             return False
 
-    def get_event_logs(self, event_name: str, from_block: int, to_block: int | str = 'latest') -> List[Dict[str, Any]]:
+    def get_event_logs(self, event_name: str, from_block: int, to_block: Union[int, str] = 'latest') -> List[Dict[str, Any]]:
         """
         Fetch event logs from the blockchain.
         Args:

@@ -1,0 +1,27 @@
+{
+  "name": "foodsafe-smart-contract",
+  "version": "1.0.0",
+  "description": "FoodSafe blockchain-based food traceability smart contract",
+  "main": "index.js",
+  "scripts": {
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "check": "npx hardhat run scripts/check-config.js --network amoy",
+    "deploy:local": "npx hardhat run scripts/deploy.js --network localhost",
+    "deploy:amoy": "npx hardhat run scripts/deploy.js --network amoy",
+    "assign-roles": "npx hardhat run scripts/assign-roles.js --network amoy",
+    "node": "npx hardhat node"
+  },
+  "keywords": ["blockchain", "food-safety", "traceability", "ethereum", "polygon"],
+  "author": "Aakash, Gourav, Nimesh, Niranth, Mandar",
+  "license": "MIT",
+  "type": "commonjs",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.27.1"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.9.6",
+    "dotenv": "^17.2.3"
+  }
+}

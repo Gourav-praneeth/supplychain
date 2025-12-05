@@ -24,9 +24,9 @@ When contamination (like *E. coli* or *Salmonella*) occurs, traditional systems 
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Polygon Amoy Testnet                      │
-│           FoodTraceability Smart Contract (ERC-721)          │
-│      0x2C6568f8567ba1020ce1D644eE6C15d5bA92A6f9             │
+│                    Polygon Amoy Testnet                     │
+│           FoodTraceability Smart Contract (ERC-721)         │
+│           0x2C6568f8567ba1020ce1D644eE6C15d5bA92A6f9        │
 └────────────────────────┬────────────────────────────────────┘
                          │ Web3.py
          ┌───────────────┴───────────────┐
@@ -314,30 +314,6 @@ View blockchain connection, API status, and smart contract info.
 
 ---
 
-## 🐛 Troubleshooting
-
-### Database Connection Failed
-```bash
-# Ensure PostgreSQL is running
-brew services start postgresql@15
-
-# Create database if needed
-createdb foodsafe_db
-```
-
-### Blockchain Not Connected
-- Verify RPC URL: `https://rpc-amoy.polygon.technology/`
-- Check if Polygon Amoy is operational
-
-### IPFS Upload Failed
-- Verify Pinata API keys in `.env` / `secrets.toml`
-- Check Pinata account limits
-
-### Frontend Event Loop Error
-- Ensure `nest_asyncio` is installed: `pip install nest_asyncio`
-
----
-
 ## 📊 Project Status
 
 | Phase | Status | Completion |
@@ -369,24 +345,3 @@ createdb foodsafe_db
 This project is licensed under the [MIT License](LICENSE).
 
 ---
-
-## 🤝 Contributing
-
-Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📞 Support
-
-For issues or questions:
-
-1. Check logs from indexer and API server
-2. Verify environment variables
-3. Run `python test_setup.py` to verify configuration
-4. Check [PROJECT_STATUS.md](PROJECT_STATUS.md) for known issues

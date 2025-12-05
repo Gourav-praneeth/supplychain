@@ -12,11 +12,11 @@ When contamination (like _E. coli_ or _Salmonella_) occurs, traditional systems 
 
 ### ✨ Key Features
 
-- **🔗 Complete Traceability** — Full visibility from producer to retailer
-- **⚡ Real-Time Transparency** — Instant access for authorized stakeholders
-- **🚨 Rapid Surgical Recalls** — Smart contracts instantly flag affected batches only
-- **🔒 Immutable Records** — Blockchain ensures data integrity and compliance
-- **📄 IPFS Integration** — Off-chain storage for certificates and documents
+- **Complete Traceability** — Full visibility from producer to retailer
+- **Real-Time Transparency** — Instant access for authorized stakeholders
+- **Rapid Surgical Recalls** — Smart contracts instantly flag affected batches only
+- **Immutable Records** — Blockchain ensures data integrity and compliance
+- **IPFS Integration** — Off-chain storage for certificates and documents
 
 ---
 
@@ -351,30 +351,13 @@ If a safety issue is detected (e.g., a contamination report for Lot 101), the re
 
 ---
 
-## 📊 Project Status
-
-| Phase               | Status      | Completion |
-| ------------------- | ----------- | ---------- |
-| **Smart Contracts** | ✅ Complete | 100%       |
-| **Backend API**     | ✅ Complete | 100%       |
-| **Event Indexer**   | ✅ Complete | 100%       |
-| **Frontend**        | ✅ Complete | 100%       |
-
-### Deployed Contract
-
-- **Network:** Polygon Amoy Testnet
-- **Address:** `0x2C6568f8567ba1020ce1D644eE6C15d5bA92A6f9`
-- **Explorer:** [View on PolygonScan](https://amoy.polygonscan.com/address/0x2C6568f8567ba1020ce1D644eE6C15d5bA92A6f9)
-
----
-
 ## 👨‍💻 Authors
 
-- Aakash
-- Gourav
-- Nimesh
-- Niranth
-- Mandar
+- Mandar Burande
+- Gourav Bhimavarapu
+- Niranth Reddy Kakulavaram
+- Poondi Balaji Aakash
+- Nimesh Bali Yadav
 
 ---
 

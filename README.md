@@ -8,7 +8,7 @@
 
 **FoodSafe** is a **blockchain-based food traceability system** that enables **surgical recalls** by maintaining an **immutable, lot-level ledger** of food products from farm to shelf.
 
-When contamination (like *E. coli* or *Salmonella*) occurs, traditional systems take **days or weeks** to trace the source, leading to dangerous blanket recalls. FoodSafe allows regulators to trace contamination sources in **seconds** — recalling **only the affected batches**.
+When contamination (like _E. coli_ or _Salmonella_) occurs, traditional systems take **days or weeks** to trace the source, leading to dangerous blanket recalls. FoodSafe allows regulators to trace contamination sources in **seconds** — recalling **only the affected batches**.
 
 ### ✨ Key Features
 
@@ -60,14 +60,14 @@ When contamination (like *E. coli* or *Salmonella*) occurs, traditional systems 
 
 ## 🛠️ Technology Stack
 
-| Layer | Technology |
-|-------|------------|
-| **Blockchain** | Solidity ^0.8.20, Polygon Amoy Testnet |
-| **Smart Contract** | ERC-721 NFT, OpenZeppelin AccessControl |
-| **Backend** | Python 3.9+, FastAPI, Web3.py, SQLAlchemy |
-| **Database** | PostgreSQL |
-| **Frontend** | Streamlit (Python) |
-| **Off-Chain Storage** | IPFS via Pinata |
+| Layer                 | Technology                                |
+| --------------------- | ----------------------------------------- |
+| **Blockchain**        | Solidity ^0.8.20, Polygon Amoy Testnet    |
+| **Smart Contract**    | ERC-721 NFT, OpenZeppelin AccessControl   |
+| **Backend**           | Python 3.9+, FastAPI, Web3.py, SQLAlchemy |
+| **Database**          | PostgreSQL                                |
+| **Frontend**          | Streamlit (Python)                        |
+| **Off-Chain Storage** | IPFS via Pinata                           |
 
 ---
 
@@ -209,57 +209,61 @@ streamlit run streamlit_app.py
 
 ### 5. Access the Application
 
-| Service | URL |
-|---------|-----|
-| **Frontend** | http://localhost:8501 |
-| **Backend API** | http://localhost:8000 |
-| **API Docs (Swagger)** | http://localhost:8000/docs |
+| Service                     | URL                                                                                              |
+| --------------------------- | ------------------------------------------------------------------------------------------------ |
+| **Frontend**                | http://localhost:8501                                                                            |
+| **Backend API**             | http://localhost:8000                                                                            |
+| **API Docs (Swagger)**      | http://localhost:8000/docs                                                                       |
 | **Contract on PolygonScan** | [View Contract](https://amoy.polygonscan.com/address/0x2C6568f8567ba1020ce1D644eE6C15d5bA92A6f9) |
 
 ---
 
 ## 👥 Roles & Permissions
 
-| Role | Description | Capabilities |
-|------|-------------|--------------|
-| `DEFAULT_ADMIN_ROLE` | Contract deployer | Grant/revoke all roles |
-| `PRODUCER_ROLE` | Farmers, factories | Register new food lots |
-| `DISTRIBUTOR_ROLE` | Logistics partners | Update lot status, track shipments |
-| `RETAILER_ROLE` | Retailers | Mark lots as on-shelf |
-| `REGULATOR_ROLE` | FDA, authorities | Trigger recalls, view all data |
+| Role                 | Description        | Capabilities                       |
+| -------------------- | ------------------ | ---------------------------------- |
+| `DEFAULT_ADMIN_ROLE` | Contract deployer  | Grant/revoke all roles             |
+| `PRODUCER_ROLE`      | Farmers, factories | Register new food lots             |
+| `DISTRIBUTOR_ROLE`   | Logistics partners | Update lot status, track shipments |
+| `RETAILER_ROLE`      | Retailers          | Mark lots as on-shelf              |
+| `REGULATOR_ROLE`     | FDA, authorities   | Trigger recalls, view all data     |
 
 ---
 
 ## 📡 API Endpoints
 
 ### Lot Management
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/lots` | List all lots (paginated) |
-| `GET` | `/lots/{token_id}` | Get specific lot details |
-| `GET` | `/lots/{token_id}/history` | Get audit trail |
-| `GET` | `/lots/{token_id}/blockchain` | Direct blockchain query |
-| `GET` | `/lots/owner/{address}` | Get lots by owner |
-| `GET` | `/lots/{token_id}/recalled` | Check recall status |
+
+| Method | Endpoint                      | Description               |
+| ------ | ----------------------------- | ------------------------- |
+| `GET`  | `/lots`                       | List all lots (paginated) |
+| `GET`  | `/lots/{token_id}`            | Get specific lot details  |
+| `GET`  | `/lots/{token_id}/history`    | Get audit trail           |
+| `GET`  | `/lots/{token_id}/blockchain` | Direct blockchain query   |
+| `GET`  | `/lots/owner/{address}`       | Get lots by owner         |
+| `GET`  | `/lots/{token_id}/recalled`   | Check recall status       |
 
 ### Recalls
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/recalls` | List all recall events |
+
+| Method | Endpoint   | Description            |
+| ------ | ---------- | ---------------------- |
+| `GET`  | `/recalls` | List all recall events |
 
 ### IPFS
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/upload` | Upload file to IPFS |
+
+| Method | Endpoint       | Description         |
+| ------ | -------------- | ------------------- |
+| `POST` | `/upload`      | Upload file to IPFS |
 | `POST` | `/upload-json` | Upload JSON to IPFS |
-| `GET` | `/ipfs/{hash}` | Retrieve from IPFS |
+| `GET`  | `/ipfs/{hash}` | Retrieve from IPFS  |
 
 ### System
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/` | Health check |
-| `GET` | `/blockchain/status` | Connection status |
-| `GET` | `/stats` | System statistics |
+
+| Method | Endpoint             | Description       |
+| ------ | -------------------- | ----------------- |
+| `GET`  | `/`                  | Health check      |
+| `GET`  | `/blockchain/status` | Connection status |
+| `GET`  | `/stats`             | System statistics |
 
 ---
 
@@ -281,6 +285,7 @@ function getLotHistory(uint256 lotId) returns (HistoryEntry[])
 ```
 
 ### Events
+
 - `LotRegistered(lotId, productName, producer)`
 - `LotStatusUpdated(lotId, newStatus, ipfsHash, updater)`
 - `LotRecalled(lotId, regulator)`
@@ -288,42 +293,75 @@ function getLotHistory(uint256 lotId) returns (HistoryEntry[])
 
 ---
 
-## 🎮 Using the DApp
+## 🎮 Using the DApp: A Journey from Farm to Fork
 
-### 1. System Status
-View blockchain connection, API status, and smart contract info.
+Experience the full lifecycle of a food product on the FoodSafe blockchain through this interactive walkthrough.
 
-### 2. Producer Dashboard
-- Enter your wallet address
-- Enable transaction signing (enter private key for testing)
-- Register new food lots with product name, origin, and metadata
-- Upload certificates to IPFS
+### 1. Producer: The Journey Begins
 
-### 3. Distributor Dashboard
-- Update lot status (InTransit, OnShelf)
-- Upload shipping manifests and temperature logs
+**Role:** Producer (Farmer/Manufacturer)  
+**Action:** Registering a new food lot.
 
-### 4. Regulator Dashboard
-- View all food lots in the system
-- Trigger surgical recalls on specific lots
-- View complete audit trails
+The producer logs in and registers a new batch of produce (e.g., "Organic Spinach - Lot 101"). They enter details like origin, harvest date, and upload safety certificates to IPFS. The system mints a unique NFT representing this specific lot.
 
-### 5. Admin Dashboard
-- Grant/revoke roles to addresses
-- View role assignments
+![Producer Dashboard](Producer%20Dashboard.png)
+
+### 2. Distributor: Maintaining the Chain of Custody
+
+**Role:** Distributor (Logistics Provider)  
+**Action:** Updating status and custody.
+
+As the goods move, the distributor takes custody. They scan the lot ID and update the status to "In Transit". They can also upload shipping manifests or temperature logs (e.g., "Temperature maintained at 4°C") to ensure quality control.
+
+![Distributor Dashboard](Distributor%20Dashboard.png)
+
+### 3. Tracking: Real-Time Visibility
+
+**Role:** Retailer / Consumer  
+**Action:** Verifying provenance.
+
+Retailers and consumers can view the complete history of the product. By entering the Lot ID, they see an immutable timeline of every handoff and status update, ensuring the food is authentic and safe.
+
+![Tracking Dashboard](Tracking%20Dashboard.png)
+
+### 4. Regulator: Ensuring Safety
+
+**Role:** Regulator (FDA/Food Safety Authority)  
+**Action:** Oversight and Rapid Response.
+
+Regulators have a high-level view of the entire supply chain. They can inspect any lot's history and verify compliance.
+
+![Regulator Dashboard Overview](Regulator%20Dashboard%20-%201.png)
+
+### 5. The Recall: Surgical Precision
+
+**Role:** Regulator  
+**Action:** Triggering a recall.
+
+If a safety issue is detected (e.g., a contamination report for Lot 101), the regulator can instantly trigger a **surgical recall**. This updates the smart contract status to "Recalled" immediately. Unlike blanket recalls, this targets _only_ the affected batch, notifying stakeholders instantly and preventing the unsafe product from reaching consumers.
+
+![Regulator Recall Action](Regulator%20Dashboard%20-%202.png)
+
+---
+
+### 6. System Status & Admin
+
+- **System Status:** Check blockchain connection, API health, and contract details.
+- **Admin Dashboard:** Manage role-based access control (granting/revoking Producer, Distributor, Regulator roles).
 
 ---
 
 ## 📊 Project Status
 
-| Phase | Status | Completion |
-|-------|--------|------------|
-| **Smart Contracts** | ✅ Complete | 100% |
-| **Backend API** | ✅ Complete | 100% |
-| **Event Indexer** | ✅ Complete | 100% |
-| **Frontend** | ✅ Complete | 100% |
+| Phase               | Status      | Completion |
+| ------------------- | ----------- | ---------- |
+| **Smart Contracts** | ✅ Complete | 100%       |
+| **Backend API**     | ✅ Complete | 100%       |
+| **Event Indexer**   | ✅ Complete | 100%       |
+| **Frontend**        | ✅ Complete | 100%       |
 
 ### Deployed Contract
+
 - **Network:** Polygon Amoy Testnet
 - **Address:** `0x2C6568f8567ba1020ce1D644eE6C15d5bA92A6f9`
 - **Explorer:** [View on PolygonScan](https://amoy.polygonscan.com/address/0x2C6568f8567ba1020ce1D644eE6C15d5bA92A6f9)

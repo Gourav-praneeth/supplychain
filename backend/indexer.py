@@ -66,9 +66,24 @@ class EventIndexer:
                 existing_lot = db.query(Lot).filter(Lot.token_id == lot_id).first()
                 
                 if not existing_lot:
-                    # Create new lot
+                    # Fetch origin from blockchain (not in event)
+                    origin = ""
+                    ipfs_hash = ""
+                    try:
+                        lot_details = self.blockchain.get_lot_details(lot_id)
+                        if lot_details:
+                            origin = lot_details.get('origin', '')
+                            # Get IPFS hash from first history entry
+                            if lot_details.get('history') and len(lot_details['history']) > 0:
+                                ipfs_hash = lot_details['history'][0].get('ipfsHash', '')
+                    except Exception as e:
+                        print(f"Warning: Could not fetch lot details from blockchain: {e}")
+                    
+                    # Create new lot with product_name and origin
                     new_lot = Lot(
                         token_id=lot_id,
+                        product_name=product_name,
+                        origin=origin,
                         owner_address=producer,
                         status="Created",
                         is_recalled=False
@@ -81,14 +96,14 @@ class EventIndexer:
                         token_id=lot_id,
                         timestamp=block_timestamp,
                         stakeholder_address=producer,
-                        ipfs_hash="",  # Will be filled from blockchain if available
+                        ipfs_hash=ipfs_hash,
                         event_type="LotRegistered",
                         transaction_hash=tx_hash,
                         block_number=block_number
                     )
                     db.add(history_entry)
                     
-                    print(f"Indexed LotRegistered event for lot {lot_id}")
+                    print(f"Indexed LotRegistered event for lot {lot_id}: {product_name} from {origin}")
                     
         except Exception as e:
             print(f"Error indexing LotRegistered events: {e}")

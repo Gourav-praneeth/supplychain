@@ -158,13 +158,23 @@ def get_lot_from_blockchain(token_id):
         return None
     try:
         lot = contract.functions.getLot(token_id).call()
+        # Parse history entries
+        history = []
+        for entry in lot[5]:
+            history.append({
+                "timestamp": entry[0],
+                "ipfsHash": entry[1],
+                "status": ["Created", "InTransit", "OnShelf", "Recalled"][entry[2]]
+            })
+        
         return {
             "lotId": lot[0],
             "productName": lot[1],
             "origin": lot[2],
             "currentOwner": lot[3],
             "status": ["Created", "InTransit", "OnShelf", "Recalled"][lot[4]],
-            "historyCount": len(lot[5])
+            "historyCount": len(lot[5]),
+            "history": history
         }
     except Exception as e:
         return None
@@ -204,6 +214,16 @@ def get_all_recalls():
     """Fetches all recall events from the API."""
     try:
         response = requests.get(f"{API_URL}/recalls", timeout=10)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException:
+        return None
+
+
+def get_lots_by_status(status):
+    """Fetches lots filtered by status."""
+    try:
+        response = requests.get(f"{API_URL}/lots/status/{status}", timeout=10)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException:
@@ -409,19 +429,57 @@ elif role == "👮 Regulator":
     
     with tab1:
         st.subheader("All Food Lots")
-        lots_data = get_all_lots()
+        
+        # Status filter
+        col_filter1, col_filter2 = st.columns([1, 3])
+        with col_filter1:
+            status_filter = st.selectbox(
+                "Filter by Status:",
+                ["All", "Created", "InTransit", "OnShelf", "Recalled"],
+                key="regulator_status_filter"
+            )
+        
+        # Fetch lots based on filter
+        if status_filter == "All":
+            lots_data = get_all_lots()
+        else:
+            lots_data = get_lots_by_status(status_filter)
         
         if lots_data and len(lots_data) > 0:
             df = pd.DataFrame(lots_data)
             
+            # Reorder columns to show important info first
+            column_order = ['token_id', 'product_name', 'origin', 'status', 'owner_address', 'is_recalled', 'created_at', 'updated_at']
+            available_columns = [col for col in column_order if col in df.columns]
+            df = df[available_columns]
+            
             # Add status emoji
             if 'status' in df.columns:
-                df['status_display'] = df['status'].apply(lambda x: f"{STATUS_COLORS.get(x, '⚪')} {x}")
+                df['status'] = df['status'].apply(lambda x: f"{STATUS_COLORS.get(x, '⚪')} {x}")
             
-            st.dataframe(df, use_container_width=True)
-            st.caption(f"Total: {len(df)} lots")
+            # Rename columns for display
+            df = df.rename(columns={
+                'token_id': 'Lot ID',
+                'product_name': 'Product',
+                'origin': 'Origin',
+                'status': 'Status',
+                'owner_address': 'Owner',
+                'is_recalled': 'Recalled',
+                'created_at': 'Created',
+                'updated_at': 'Updated'
+            })
+            
+            st.dataframe(df, use_container_width=True, hide_index=True)
+            
+            # Summary stats
+            col1, col2, col3, col4 = st.columns(4)
+            all_lots = get_all_lots() or []
+            col1.metric("Total Lots", len(all_lots))
+            col2.metric("InTransit", len([l for l in all_lots if l.get('status') == 'InTransit']))
+            col3.metric("OnShelf", len([l for l in all_lots if l.get('status') == 'OnShelf']))
+            col4.metric("Recalled", len([l for l in all_lots if l.get('status') == 'Recalled']))
         else:
-            st.info("No lots registered yet.")
+            st.info("No lots found for the selected filter.")
         
         # Show recalls
         st.markdown("---")
@@ -429,7 +487,12 @@ elif role == "👮 Regulator":
         recalls = get_all_recalls()
         if recalls and len(recalls) > 0:
             df_recalls = pd.DataFrame(recalls)
-            st.dataframe(df_recalls, use_container_width=True)
+            # Format for better display
+            if 'transaction_hash' in df_recalls.columns:
+                df_recalls['tx_link'] = df_recalls['transaction_hash'].apply(
+                    lambda x: f"[{x[:10]}...](https://amoy.polygonscan.com/tx/{x})"
+                )
+            st.dataframe(df_recalls, use_container_width=True, hide_index=True)
         else:
             st.success("✓ No recalls in system")
     
@@ -445,64 +508,137 @@ elif role == "👮 Regulator":
         else:
             st.success("✓ You have REGULATOR_ROLE")
             
-            with st.form("recall_form"):
-                lot_id_to_recall = st.number_input("Lot ID to Recall:", min_value=1, step=1)
-                recall_reason = st.text_area("Reason for Recall:", placeholder="E.g., E. coli contamination detected")
-                submitted = st.form_submit_button("🚨 TRIGGER RECALL", type="primary")
+            # Show available lots that can be recalled (not already recalled)
+            lots_data = get_all_lots()
+            recallable_lots = [l for l in (lots_data or []) if l.get('status') != 'Recalled']
+            
+            if recallable_lots:
+                st.info(f"📋 {len(recallable_lots)} lots available for recall")
+                
+                # Show lot selector with product info
+                lot_options = {
+                    f"#{l['token_id']} - {l.get('product_name', 'Unknown')} ({l.get('status', 'Unknown')})": l['token_id'] 
+                    for l in recallable_lots
+                }
+                
+                with st.form("recall_form"):
+                    selected_lot_display = st.selectbox("Select Lot to Recall:", list(lot_options.keys()))
+                    lot_id_to_recall = lot_options.get(selected_lot_display, 1)
+                    recall_reason = st.text_area("Reason for Recall:", placeholder="E.g., E. coli contamination detected")
+                    submitted = st.form_submit_button("🚨 TRIGGER RECALL", type="primary")
 
-                if submitted:
-                    if not private_key:
-                        st.error("Enable transaction signing in sidebar")
-                    else:
-                        try:
-                            with st.spinner("Processing recall..."):
-                                nonce = w3.eth.get_transaction_count(user_address)
-                                gas_price = w3.eth.gas_price
+                    if submitted:
+                        if not private_key:
+                            st.error("Enable transaction signing in sidebar")
+                        else:
+                            try:
+                                with st.spinner("Processing recall..."):
+                                    nonce = w3.eth.get_transaction_count(user_address)
+                                    gas_price = w3.eth.gas_price
 
-                                txn = contract.functions.triggerRecall(
-                                    int(lot_id_to_recall)
-                                ).build_transaction({
-                                    'from': user_address,
-                                    'nonce': nonce,
-                                    'gas': 200000,
-                                    'gasPrice': gas_price
-                                })
+                                    txn = contract.functions.triggerRecall(
+                                        int(lot_id_to_recall)
+                                    ).build_transaction({
+                                        'from': user_address,
+                                        'nonce': nonce,
+                                        'gas': 200000,
+                                        'gasPrice': gas_price
+                                    })
 
-                                signed_txn = w3.eth.account.sign_transaction(txn, private_key)
-                                tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
-                                
-                                st.info(f"TX sent: {tx_hash.hex()[:20]}...")
-                                
-                                receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+                                    signed_txn = w3.eth.account.sign_transaction(txn, private_key)
+                                    tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+                                    
+                                    st.info(f"TX sent: {tx_hash.hex()[:20]}...")
+                                    
+                                    receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
 
-                                if receipt['status'] == 1:
-                                    st.success(f"✓ Lot #{lot_id_to_recall} RECALLED!")
-                                    st.markdown(f"[View on PolygonScan](https://amoy.polygonscan.com/tx/{tx_hash.hex()})")
-                                    st.balloons()
-                                else:
-                                    st.error("Transaction failed")
+                                    if receipt['status'] == 1:
+                                        st.success(f"✓ Lot #{lot_id_to_recall} RECALLED!")
+                                        st.markdown(f"[View on PolygonScan](https://amoy.polygonscan.com/tx/{tx_hash.hex()})")
+                                        st.balloons()
+                                    else:
+                                        st.error("Transaction failed")
 
-                        except Exception as e:
-                            st.error(f"Error: {e}")
+                            except Exception as e:
+                                st.error(f"Error: {e}")
+            else:
+                st.warning("No lots available to recall (all lots either recalled or none registered)")
     
     with tab3:
         st.subheader("📜 Lot Audit Trail")
         lots_data = get_all_lots()
         
         if lots_data and len(lots_data) > 0:
-            lot_ids = [lot['token_id'] for lot in lots_data]
-            selected_lot = st.selectbox("Select Lot:", lot_ids)
+            # Create dropdown with product info
+            lot_options = {
+                f"#{l['token_id']} - {l.get('product_name', 'Unknown')} ({l.get('status', 'Unknown')})": l['token_id'] 
+                for l in lots_data
+            }
+            selected_lot_display = st.selectbox("Select Lot:", list(lot_options.keys()), key="audit_lot_select")
+            selected_lot = lot_options.get(selected_lot_display)
             
             if selected_lot:
+                # Show lot details from blockchain
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.markdown("**📦 Lot Details (from Database)**")
+                    lot_info = next((l for l in lots_data if l['token_id'] == selected_lot), None)
+                    if lot_info:
+                        st.write(f"**Product:** {lot_info.get('product_name', 'N/A')}")
+                        st.write(f"**Origin:** {lot_info.get('origin', 'N/A')}")
+                        st.write(f"**Status:** {STATUS_COLORS.get(lot_info.get('status'), '⚪')} {lot_info.get('status', 'N/A')}")
+                        st.write(f"**Owner:** {lot_info.get('owner_address', 'N/A')[:15]}...")
+                
+                with col2:
+                    st.markdown("**⛓️ Lot Details (from Blockchain)**")
+                    blockchain_lot = get_lot_from_blockchain(selected_lot)
+                    if blockchain_lot:
+                        st.write(f"**Product:** {blockchain_lot.get('productName', 'N/A')}")
+                        st.write(f"**Origin:** {blockchain_lot.get('origin', 'N/A')}")
+                        st.write(f"**Status:** {STATUS_COLORS.get(blockchain_lot.get('status'), '⚪')} {blockchain_lot.get('status', 'N/A')}")
+                        st.write(f"**Owner:** {blockchain_lot.get('currentOwner', 'N/A')[:15]}...")
+                    else:
+                        st.warning("Could not fetch from blockchain")
+                
+                st.markdown("---")
+                st.markdown("**📜 Event History**")
+                
+                # Get history from API
                 history = get_lot_history(selected_lot)
-                if history:
-                    st.write(f"**{len(history)} events** for Lot #{selected_lot}")
-                    df_history = pd.DataFrame(history)
-                    st.dataframe(df_history, use_container_width=True)
+                if history and len(history) > 0:
+                    st.write(f"**{len(history)} events** recorded")
+                    
+                    # Show as timeline
+                    for i, entry in enumerate(history):
+                        event_type = entry.get('event_type', 'Unknown')
+                        icon = "🆕" if event_type == "LotRegistered" else "📦" if event_type == "LotStatusUpdated" else "🚨" if event_type == "LotRecalled" else "🔄"
+                        
+                        with st.expander(f"{icon} {event_type} - {entry.get('timestamp', 'N/A')[:19]}", expanded=(i == len(history) - 1)):
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.write(f"**Event:** {event_type}")
+                                st.write(f"**Time:** {entry.get('timestamp', 'N/A')}")
+                                st.write(f"**By:** `{entry.get('stakeholder_address', 'N/A')}`")
+                            with col2:
+                                ipfs_hash = entry.get('ipfs_hash', '')
+                                if ipfs_hash and ipfs_hash != "RECALL_TRIGGERED":
+                                    st.write(f"**IPFS:** [{ipfs_hash[:20]}...]({get_ipfs_gateway_url(ipfs_hash)})")
+                                elif ipfs_hash == "RECALL_TRIGGERED":
+                                    st.write("**IPFS:** 🚨 RECALL_TRIGGERED")
+                                tx_hash = entry.get('transaction_hash', '')
+                                if tx_hash:
+                                    st.markdown(f"**TX:** [{tx_hash[:15]}...](https://amoy.polygonscan.com/tx/{tx_hash})")
                 else:
-                    st.info("No history found")
+                    # Try fetching directly from blockchain
+                    st.info("No indexed history. Checking blockchain directly...")
+                    if blockchain_lot and blockchain_lot.get('historyCount', 0) > 0:
+                        st.write(f"Blockchain shows {blockchain_lot.get('historyCount')} history entries")
+                        st.caption("Note: Run the indexer to sync this data to the database")
+                    else:
+                        st.warning("No history found")
         else:
-            st.info("No lots to audit")
+            st.info("No lots registered yet.")
 
 # -----------------------------------------------------------------------------
 # PRODUCER DASHBOARD

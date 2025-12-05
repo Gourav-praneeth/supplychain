@@ -35,6 +35,8 @@ def startup_event():
 
 class LotResponse(BaseModel):
     token_id: int
+    product_name: Optional[str] = None
+    origin: Optional[str] = None
     owner_address: str
     status: str
     is_recalled: bool
@@ -245,6 +247,22 @@ def get_lots_by_owner(address: str, db: Session = Depends(get_db)):
         return lots
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching lots by owner: {str(e)}")
+
+
+@app.get("/lots/status/{status}", response_model=List[LotResponse])
+def get_lots_by_status(status: str, db: Session = Depends(get_db)):
+    """
+    Get all lots by status (Created, InTransit, OnShelf, Recalled).
+    """
+    valid_statuses = ["Created", "InTransit", "OnShelf", "Recalled"]
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
+    
+    try:
+        lots = db.query(Lot).filter(Lot.status == status).all()
+        return lots
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching lots by status: {str(e)}")
 
 
 @app.get("/stats")

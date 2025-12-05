@@ -15,6 +15,8 @@ class Lot(Base):
     __tablename__ = "lots"
 
     token_id = Column(Integer, primary_key=True, index=True)
+    product_name = Column(String(200), nullable=True)  # Product name from blockchain
+    origin = Column(String(200), nullable=True)  # Origin location from blockchain
     owner_address = Column(String(42), nullable=False, index=True)
     status = Column(String(20), nullable=False, index=True)
     is_recalled = Column(Boolean, default=False, index=True)
@@ -70,6 +72,24 @@ def init_db():
     3. Set up indexes for query optimization
     """
     Base.metadata.create_all(bind=engine)
+    
+    # Add missing columns if they don't exist (simple migration)
+    from sqlalchemy import inspect, text
+    inspector = inspect(engine)
+    
+    if 'lots' in inspector.get_table_names():
+        columns = [col['name'] for col in inspector.get_columns('lots')]
+        
+        with engine.connect() as conn:
+            if 'product_name' not in columns:
+                conn.execute(text("ALTER TABLE lots ADD COLUMN product_name VARCHAR(200)"))
+                conn.commit()
+                print("Added product_name column to lots table")
+            
+            if 'origin' not in columns:
+                conn.execute(text("ALTER TABLE lots ADD COLUMN origin VARCHAR(200)"))
+                conn.commit()
+                print("Added origin column to lots table")
 
 
 def get_db():
